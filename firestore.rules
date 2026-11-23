@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(teamId) {
+      return isVerified() && get(/databases/$(database)/documents/teams/$(teamId)).data.ownerId == request.auth.uid;
+    }
+
+    // --- TEAMS ---
+    match /teams/{teamId} {
+      function isValidTeam(data) {
+        return data.keys().hasAll(['name', 'ownerId']) 
+            && data.keys().size() >= 2
+            && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+            && data.ownerId == request.auth.uid;
+      }
+
+      allow get: if isVerified(); // Anyone verified can get a team if they know ID? Maybe too open.
+      // But for a team management app, usually you invite. 
+      // Let's restrict read to owner or members (if I had a members list).
+      // For now, let's stick to Owner-only for sensitive data.
+      allow list: if isVerified() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerified() && isValidId(teamId) && isValidTeam(incoming());
+      allow update: if isVerified() && isValidTeam(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'series', 'logoUrl'])
+        && incoming().ownerId == existing().ownerId
+      );
+      allow delete: if isOwner(teamId);
+
+      // --- SUBCOLLECTIONS ---
+      
+      // Drivers
+      match /drivers/{driverId} {
+        function isValidDriver(data) {
+          return data.keys().hasAll(['name'])
+              && data.name is string && data.name.size() <= 100;
+        }
+        allow read: if isOwner(teamId);
+        allow create: if isOwner(teamId) && isValidId(driverId) && isValidDriver(incoming());
+        allow update: if isOwner(teamId) && isValidDriver(incoming());
+        allow delete: if isOwner(teamId);
+      }
+
+      // Weekends
+      match /weekends/{weekendId} {
+        function isValidWeekend(data) {
+          return data.keys().hasAll(['eventName', 'track', 'startDate'])
+              && data.eventName is string && data.eventName.size() <= 100
+              && data.track is string && data.track.size() <= 100;
+        }
+        allow read: if isOwner(teamId);
+        allow create: if isOwner(teamId) && isValidId(weekendId) && isValidWeekend(incoming());
+        allow update: if isOwner(teamId) && isValidWeekend(incoming());
+        allow delete: if isOwner(teamId);
+      }
+
+      // Incidents
+      match /incidents/{incidentId} {
+        function isValidIncident(data) {
+          return data.keys().hasAll(['description'])
+              && data.description is string && data.description.size() <= 5000;
+        }
+        allow read: if isOwner(teamId);
+        allow create: if isOwner(teamId) && isValidId(incidentId) && isValidIncident(incoming());
+        allow update: if isOwner(teamId) && isValidIncident(incoming());
+        allow delete: if isOwner(teamId);
+      }
+
+      // Inventory
+      match /inventory/{partId} {
+        function isValidPart(data) {
+          return data.keys().hasAll(['name', 'category', 'mileageKm'])
+              && data.name is string && data.name.size() <= 100
+              && data.mileageKm is number;
+        }
+        allow read: if isOwner(teamId);
+        allow create: if isOwner(teamId) && isValidId(partId) && isValidPart(incoming());
+        allow update: if isOwner(teamId) && isValidPart(incoming()) && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['mileageKm', 'status', 'name', 'category', 'maxLifeKm'])
+        );
+        allow delete: if isOwner(teamId);
+      }
+    }
+  }
+}

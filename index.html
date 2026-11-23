@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+    <script>
+      // Defensive scripting to prevent browser wallet extensions (like TronLink)
+      // from crashing when trying to write to read-only properties on window in sandboxed/iframe environments.
+      (function() {
+        const propertiesToPatch = ['tronLink', 'tron', 'tronWeb'];
+        propertiesToPatch.forEach(prop => {
+          try {
+            let value = window[prop];
+            Object.defineProperty(window, prop, {
+              get() {
+                return value;
+              },
+              set(newValue) {
+                value = newValue;
+              },
+              configurable: true,
+              enumerable: true
+            });
+          } catch (e) {
+            console.debug(`Could not patch window.${prop}:`, e);
+          }
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

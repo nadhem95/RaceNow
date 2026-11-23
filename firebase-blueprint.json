@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "Team": {
+      "title": "Racing Team",
+      "description": "Core team data including series participation.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "series": { "type": "array", "items": { "type": "string" } },
+        "logoUrl": { "type": "string" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["name", "ownerId"]
+    },
+    "Driver": {
+      "title": "Driver Profile",
+      "description": "Racing driver professional profile and medical data.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "licenseNumber": { "type": "string" },
+        "licenseExpiry": { "type": "string", "format": "date" },
+        "medicalExpiry": { "type": "string", "format": "date" },
+        "emergencyContact": { "type": "string" },
+        "bloodType": { "type": "string" },
+        "bio": { "type": "string" },
+        "stats": { "type": "object" }
+      },
+      "required": ["name"]
+    },
+    "RaceWeekend": {
+      "title": "Race Weekend",
+      "description": "Event specific data, schedules, and stints.",
+      "type": "object",
+      "properties": {
+        "eventName": { "type": "string" },
+        "track": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["upcoming", "ongoing", "completed"] },
+        "weatherForecast": { "type": "string" }
+      },
+      "required": ["eventName", "track", "startDate"]
+    },
+    "IncidentReport": {
+      "title": "Incident & Protest Report",
+      "description": "Legal/Stewardship documents for race control.",
+      "type": "object",
+      "properties": {
+        "weekendId": { "type": "string" },
+        "session": { "type": "string" },
+        "description": { "type": "string" },
+        "driverId": { "type": "string" },
+        "carNumber": { "type": "string" },
+        "stewardsDecision": { "type": "string" },
+        "aiGeneratedDraft": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Part": {
+      "title": "Technical Part",
+      "description": "Inventory and wear tracking for car components.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "mileageKm": { "type": "number" },
+        "maxLifeKm": { "type": "number" },
+        "installDate": { "type": "string", "format": "date" },
+        "status": { "type": "string", "enum": ["good", "warning", "replace"] }
+      }
+    }
+  },
+  "firestore": {
+    "/teams/{teamId}": {
+      "schema": "Team",
+      "description": "Main team document."
+    },
+    "/teams/{teamId}/drivers/{driverId}": {
+      "schema": "Driver",
+      "description": "Team driver roster."
+    },
+    "/teams/{teamId}/weekends/{weekendId}": {
+      "schema": "RaceWeekend",
+      "description": "Racing events schedule."
+    },
+    "/teams/{teamId}/incidents/{incidentId}": {
+      "schema": "IncidentReport",
+      "description": "Race incident documentation."
+    },
+    "/teams/{teamId}/inventory/{partId}": {
+      "schema": "Part",
+      "description": "Car parts and maintenance logs."
+    }
+  }
+}
