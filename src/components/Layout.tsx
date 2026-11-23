@@ -45,11 +45,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       )}>
         <div className="p-8 flex items-center gap-4">
           <div className="min-w-[48px] h-12 bg-red-600 rounded-xl flex items-center justify-center font-black text-2xl italic tracking-tighter text-white shadow-lg shadow-red-600/30">
-            PW
+            RN
           </div>
           {isOpen && (
             <div className="flex flex-col">
-              <span className="font-black tracking-tighter text-xl text-white">PITWALL</span>
+              <span className="font-black tracking-tighter text-xl text-white">RaceNow</span>
               <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest -mt-1">Management OS</span>
             </div>
           )}
